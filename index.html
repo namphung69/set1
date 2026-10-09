@@ -106,8 +106,9 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let jobs=[];
 const SB="https://faxlivdtnqzblryqzidi.supabase.co/rest/v1/jobs";
-const KEY="PASTE_ANON_KEY_HERE";
-const H={apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"};
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheGxpdmR0bnF6YmxyeXF6aWRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1MTY1OTEsImV4cCI6MjEwNzA5MjU5MX0.ReShum7ZZ_LSHReTgJCZKFeB26Btx1WKLSRXaxLf2q4";
+const H={apikey:KEY.trim(),"Content-Type":"application/json",Prefer:"return=minimal"};
+if(KEY.trim().startsWith("eyJ"))H.Authorization="Bearer "+KEY.trim();
 const setMsg=t=>{$("net").textContent=t;$("net").classList.toggle("on",!!t)};
 async function api(method,qs,body){
   if(KEY.startsWith("PASTE")){setMsg("ยังไม่ได้ใส่ anon key ในโค้ด");return null}
@@ -121,7 +122,7 @@ async function loadJobs(){
   const rows=await api("GET","?select=data&order=created_at.desc");
   if(rows){jobs=rows.map(r=>r.data);render()}
 }
-
+ 
 $("brand").innerHTML=Object.keys(MODELS).map(b=>`<option>${esc(b)}</option>`).join("");
 const fillModels=()=>{$("model").innerHTML=[...MODELS[$("brand").value],OTHER].map(m=>`<option>${esc(m)}</option>`).join("");toggleMc()};
 const toggleMc=()=>{$("mc").style.display=$("model").value===OTHER?"block":"none"};
@@ -129,7 +130,7 @@ $("model").onchange=toggleMc;
 $("brand").onchange=fillModels;fillModels();
 $("sym").innerHTML=SYMS.map(([n,w],i)=>`<label><input type="checkbox" data-w="${w}" value="${esc(n)}">${esc(n)}</label>`).join("");
 $("fs").innerHTML+=Object.entries(STATUS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
-
+ 
 const checked=()=>[...document.querySelectorAll("#sym input:checked")];
 function suggest(){
   const w=Math.max(0,...checked().map(c=>+c.dataset.w));
@@ -137,13 +138,13 @@ function suggest(){
   $("warn").classList.toggle("on",+$("sev").value===3);
 }
 $("sym").onchange=suggest;$("sev").onchange=suggest;
-
+ 
 function clearForm(){
   ["cn","cp","imei","note","price","mc"].forEach(i=>$(i).value="");
   checked().forEach(c=>c.checked=false);$("sev").value=1;suggest();
 }
 $("clr").onclick=clearForm;
-
+ 
 $("add").onclick=()=>{
   const name=$("cn").value.trim(),phone=$("cp").value.trim(),syms=checked().map(c=>c.value);
   if(!name||!phone){alert("กรอกชื่อและเบอร์ลูกค้า");return}
@@ -153,7 +154,7 @@ $("add").onclick=()=>{
   const job={id:"R"+Date.now().toString().slice(-7),name,phone,brand:$("brand").value,model:$("model").value===OTHER?$("mc").value.trim():$("model").value,imei:$("imei").value.trim(),syms,note:$("note").value.trim(),sev,price:$("price").value,status:sev===3?"received":"repairing",at:new Date().toISOString(),log:[]};
   jobs.unshift(job);api("POST","",{id:job.id,data:job});clearForm();render();
 };
-
+ 
 function setStatus(id,st){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   if(st==="center"){
@@ -163,7 +164,7 @@ function setStatus(id,st){
   j.status=st;j.log.push({st,at:new Date().toISOString()});api("PATCH","?id=eq."+encodeURIComponent(id),{data:j});render();
 }
 function del(id){if(confirm("ลบรายการนี้?")){jobs=jobs.filter(x=>x.id!==id);api("DELETE","?id=eq."+encodeURIComponent(id));render()}}
-
+ 
 function actions(j){
   const b=(st,t,pri)=>`<button class="sm ${pri?"pri":""}" onclick="setStatus('${j.id}','${st}')">${t}</button>`;
   let a="";
